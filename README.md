@@ -7,6 +7,8 @@ A modern Express API server built with **Bun runtime**, featuring Gemini AI inte
 - ⚡️ **Bun Runtime** - Lightning-fast JavaScript runtime
 - 🎯 **Express.js** - Robust web framework
 - 🤖 **Gemini AI Integration** - AI-powered content generation
+- 📱 **LinkedIn Integration** - Automated posting to LinkedIn
+- 🤖 **GitHub Actions Automation** - Daily scheduled posts at 9 AM
 - 🔗 **Linked API Architecture** - Forward generated content to other endpoints
 - 🛡️ **Security** - Helmet for security headers, CORS enabled
 - 📝 **TypeScript** - Full TypeScript support
@@ -17,6 +19,7 @@ A modern Express API server built with **Bun runtime**, featuring Gemini AI inte
 
 - [Bun](https://bun.sh/) v1.0.0 or higher
 - Gemini API Key ([Get one here](https://makersuite.google.com/app/apikey))
+- LinkedIn API Credentials (for automated posting - see [LINKEDIN_SETUP.md](./LINKEDIN_SETUP.md))
 
 ## 🛠️ Installation
 
@@ -39,14 +42,26 @@ A modern Express API server built with **Bun runtime**, featuring Gemini AI inte
    cp .env.example .env
    ```
 
-   Edit `.env` and add your Gemini API key:
+   Edit `.env` and add your API keys:
 
    ```env
    PORT=3000
    NODE_ENV=development
    GEMINI_API_KEY=your_gemini_api_key_here
    API_VERSION=v1
+
+   # LinkedIn credentials (optional - for automated posting)
+   LINKEDIN_ACCESS_TOKEN=your_linkedin_access_token
+   LINKEDIN_PERSON_URN=urn:li:person:your_person_id
    ```
+
+4. **Set up LinkedIn (Optional)**
+
+   For automated LinkedIn posting, follow the guide in [LINKEDIN_SETUP.md](./LINKEDIN_SETUP.md)
+
+5. **Set up GitHub Actions (Optional)**
+
+   For automated daily posts, see [GITHUB_ACTIONS_SETUP.md](./GITHUB_ACTIONS_SETUP.md)
 
 ## 🏃‍♂️ Running the Application
 
@@ -68,7 +83,33 @@ bun start
 bun run build
 ```
 
+### Run Daily Post Script
+
+```bash
+bun run daily-post
+```
+
 The server will start on `http://localhost:3000`
+
+## 🤖 Automated Daily Posting
+
+This application includes a GitHub Actions workflow that automatically generates and posts content to LinkedIn every day at 9:00 AM (Bangkok time).
+
+### Setup Automation
+
+1. Push your code to a GitHub repository
+2. Configure GitHub Secrets (see [GITHUB_ACTIONS_SETUP.md](./GITHUB_ACTIONS_SETUP.md))
+3. Enable GitHub Actions in your repository
+
+### Manual Testing
+
+Test the daily post script locally:
+
+```bash
+bun run daily-post
+```
+
+For complete setup instructions, see [GITHUB_ACTIONS_SETUP.md](./GITHUB_ACTIONS_SETUP.md)
 
 ## 📚 API Endpoints
 
@@ -81,6 +122,53 @@ The server will start on `http://localhost:3000`
 
 - **GET** `/api`
   - Get API information and available endpoints
+
+### LinkedIn Post Endpoints
+
+#### Create New Post
+
+- **POST** `/api/post/new-post`
+
+  **Request Body:**
+
+  ```json
+  {
+    "topic": "AI and Machine Learning",
+    "maxTokens": 500,
+    "dryRun": false
+  }
+  ```
+
+  All fields are optional:
+  - `topic`: Custom topic (if not provided, uses random topic)
+  - `maxTokens`: Maximum tokens to generate
+  - `dryRun`: If true, generates content without posting
+
+  **Response:**
+
+  ```json
+  {
+    "success": true,
+    "message": "Content generated and posted to LinkedIn successfully",
+    "data": {
+      "content": "Generated LinkedIn post content...",
+      "prompt": "The prompt used for generation",
+      "linkedInPostId": "urn:li:share:123456789",
+      "linkedInPostState": "PUBLISHED",
+      "timestamp": "2024-01-01T00:00:00.000Z"
+    }
+  }
+  ```
+
+#### Check Status
+
+- **GET** `/api/post/status`
+  - Check if LinkedIn and Gemini are properly configured
+
+#### Preview User Profile
+
+- **GET** `/api/post/preview-profile`
+  - Get LinkedIn user profile information
 
 ### Gemini Endpoints
 
@@ -179,21 +267,32 @@ The server will start on `http://localhost:3000`
 
 ```
 linked-in-post-bot/
+├── .github/
+│   └── workflows/
+│       └── daily-post.yml        # GitHub Actions workflow
 ├── src/
 │   ├── middleware/
 │   │   └── errorHandler.ts       # Global error handling
 │   ├── routes/
 │   │   ├── index.ts              # Main route aggregator
+│   │   ├── post.routes.ts        # LinkedIn post routes
 │   │   ├── gemini.routes.ts      # Gemini API routes
 │   │   └── receiver.routes.ts    # Content receiver routes
 │   ├── services/
 │   │   ├── gemini.service.ts     # Gemini API integration
+│   │   ├── linkedin.service.ts   # LinkedIn API integration
 │   │   └── forwarder.service.ts  # Content forwarding service
+│   ├── scripts/
+│   │   └── daily-post.ts         # Daily automated post script
+│   ├── util/
+│   │   └── generatePrompt.ts     # Prompt generation utilities
 │   └── server.ts                 # Express app setup & server start
 ├── .env.example                  # Environment variables template
 ├── .gitignore                    # Git ignore rules
 ├── package.json                  # Project dependencies
 ├── tsconfig.json                 # TypeScript configuration
+├── LINKEDIN_SETUP.md             # LinkedIn API setup guide
+├── GITHUB_ACTIONS_SETUP.md       # GitHub Actions setup guide
 └── README.md                     # Project documentation
 ```
 
@@ -233,14 +332,33 @@ curl -X POST http://localhost:3000/api/gemini/generate-and-forward \
   }'
 ```
 
+**Generate and Post to LinkedIn:**
+
+```bash
+curl -X POST http://localhost:3000/api/post/new-post \
+  -H "Content-Type: application/json" \
+  -d '{
+    "topic": "AI and Machine Learning trends",
+    "dryRun": true
+  }'
+```
+
+**Check LinkedIn Integration Status:**
+
+```bash
+curl http://localhost:3000/api/post/status
+```
+
 ## 🔒 Environment Variables
 
-| Variable         | Description      | Required | Default       |
-| ---------------- | ---------------- | -------- | ------------- |
-| `PORT`           | Server port      | No       | `3000`        |
-| `NODE_ENV`       | Environment mode | No       | `development` |
-| `GEMINI_API_KEY` | Gemini API key   | Yes      | -             |
-| `API_VERSION`    | API version      | No       | `v1`          |
+| Variable                | Description          | Required             | Default       |
+| ----------------------- | -------------------- | -------------------- | ------------- |
+| `PORT`                  | Server port          | No                   | `3000`        |
+| `NODE_ENV`              | Environment mode     | No                   | `development` |
+| `GEMINI_API_KEY`        | Gemini API key       | Yes                  | -             |
+| `API_VERSION`           | API version          | No                   | `v1`          |
+| `LINKEDIN_ACCESS_TOKEN` | LinkedIn OAuth token | For LinkedIn posting | -             |
+| `LINKEDIN_PERSON_URN`   | LinkedIn Person URN  | For LinkedIn posting | -             |
 
 ## 🛡️ Security Features
 

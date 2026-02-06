@@ -8,7 +8,8 @@
     "dev": "bun --watch src/server.ts",
     "start": "bun src/server.ts",
     "build": "bun build src/server.ts --outdir ./dist --target bun",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "daily-post": "bun src/scripts/daily-post.ts"
   },
   "keywords": [
     "bun",

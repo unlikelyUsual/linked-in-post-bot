@@ -1,0 +1,38 @@
+name: Daily LinkedIn Post
+
+on:
+  # Run daily at 9:00 AM (UTC+7, Bangkok time = 2:00 AM UTC)
+  schedule:
+    - cron: "0 2 * * *" # 2:00 AM UTC = 9:00 AM Bangkok (UTC+7)
+
+  # Allow manual trigger from GitHub Actions tab
+  workflow_dispatch:
+
+jobs:
+  post-to-linkedin:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Run daily post script
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
+          LINKEDIN_PERSON_URN: ${{ secrets.LINKEDIN_PERSON_URN }}
+        run: bun run daily-post
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "❌ Daily post failed at $(date)"
+          echo "Check the logs above for error details"
