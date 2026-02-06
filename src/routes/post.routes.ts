@@ -82,17 +82,13 @@ router.post("/new-post", async (req: Request, res: Response) => {
  * GET /api/post/preview
  * Preview what kind of content will be generated (without posting)
  */
-router.get("/preview", async (req: Request, res: Response) => {
+router.get("/preview-profile", async (req: Request, res: Response) => {
   try {
-    const prompt = generatePrompt();
-
     res.json({
       success: true,
       message: "Preview prompt generated",
       data: {
-        prompt,
-        note: "This is what will be sent to Gemini to generate content",
-        timestamp: new Date().toISOString(),
+        user: await linkedInService.getUserProfile(),
       },
     });
   } catch (error: any) {

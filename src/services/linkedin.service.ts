@@ -111,7 +111,7 @@ export class LinkedInService {
     }
 
     try {
-      const response = await fetch(`${this.apiBaseUrl}/me`, {
+      const response = await fetch(`${this.apiBaseUrl}/v2/userinfo`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${this.accessToken}`,
