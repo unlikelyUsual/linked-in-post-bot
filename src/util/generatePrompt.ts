@@ -56,7 +56,7 @@ Requirements:
 - Make it valuable and actionable for the target audience
 - The post should be ready to publish as-is, with proper formatting for LinkedIn.
 - Return only the content. That's all. Don't add emojis. Max words 400. 
-- Add reference at the bottom, Keep reference at max 2`;
+- Add reference at the bottom, Keep reference at max 2 (ex : blog heading - link) not in md format`;
 
   return prompt;
 };
