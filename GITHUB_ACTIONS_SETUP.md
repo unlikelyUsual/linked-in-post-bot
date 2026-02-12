@@ -4,9 +4,9 @@ This guide explains how to set up the automated daily LinkedIn post using GitHub
 
 ## 🎯 Overview
 
-The GitHub Actions workflow automatically generates and posts content to LinkedIn every day at **9:00 AM (Bangkok time, UTC+7)**.
+The GitHub Actions workflow automatically generates and posts content to LinkedIn **every 2 days** at **9:00 AM (Bangkok time, UTC+7)**.
 
-## 📋 Prerequisites
+## 📋 Prerequisies
 
 Before setting up the GitHub Actions workflow, ensure you have:
 
@@ -33,7 +33,7 @@ Navigate to your GitHub repository and add the following secrets:
 
 The workflow file is already created at `.github/workflows/daily-post.yml`. It includes:
 
-- **Scheduled run**: Daily at 9:00 AM Bangkok time (2:00 AM UTC)
+- **Scheduled run**: Every 2 days at 9:00 AM Bangkok time (2:00 AM UTC)
 - **Manual trigger**: You can also run it manually from GitHub Actions tab
 - **Automatic notifications**: Logs errors if the post fails
 
@@ -51,7 +51,7 @@ The workflow file is already created at `.github/workflows/daily-post.yml`. It i
 Before waiting for the scheduled run, test the workflow manually:
 
 1. Go to **Actions** tab in your GitHub repository
-2. Click on **Daily LinkedIn Post** workflow
+2. Click on **LinkedIn Post (Every 2 Days)** workflow
 3. Click **Run workflow** button
 4. Select the branch (usually `main` or `master`)
 5. Click **Run workflow**
@@ -69,7 +69,7 @@ bun run daily-post
 
 ## 📅 Schedule Configuration
 
-The default schedule is **9:00 AM Bangkok time (UTC+7)**, which is **2:00 AM UTC**.
+The default schedule is **every 2 days at 9:00 AM Bangkok time (UTC+7)**, which is **2:00 AM UTC**.
 
 ### Change the Schedule Time
 
@@ -77,19 +77,25 @@ To modify the schedule, edit `.github/workflows/daily-post.yml`:
 
 ```yaml
 schedule:
-  - cron: "0 2 * * *" # Current: 2:00 AM UTC = 9:00 AM Bangkok
+  - cron: "0 2 */2 * *" # Current: Every 2 days at 2:00 AM UTC = 9:00 AM Bangkok
 ```
 
 **Cron format**: `minute hour day month day-of-week`
 
+**Note**: The `*/2` in the day field means "every 2 days".
+
 #### Common Schedule Examples:
 
-| Time (Bangkok) | Time (UTC)              | Cron Expression |
-| -------------- | ----------------------- | --------------- |
-| 6:00 AM        | 11:00 PM (previous day) | `0 23 * * *`    |
-| 9:00 AM        | 2:00 AM                 | `0 2 * * *`     |
-| 12:00 PM       | 5:00 AM                 | `0 5 * * *`     |
-| 6:00 PM        | 11:00 AM                | `0 11 * * *`    |
+| Frequency       | Time (Bangkok) | Time (UTC)              | Cron Expression |
+| --------------- | -------------- | ----------------------- | --------------- |
+| Every 2 days    | 9:00 AM        | 2:00 AM                 | `0 2 */2 * *`   |
+| Every 3 days    | 9:00 AM        | 2:00 AM                 | `0 2 */3 * *`   |
+| Daily           | 9:00 AM        | 2:00 AM                 | `0 2 * * *`     |
+| Daily           | 6:00 AM        | 11:00 PM (previous day) | `0 23 * * *`    |
+| Daily           | 12:00 PM       | 5:00 AM                 | `0 5 * * *`     |
+| Daily           | 6:00 PM        | 11:00 AM                | `0 11 * * *`    |
+| Weekly (Monday) | 9:00 AM        | 2:00 AM                 | `0 2 * * 1`     |
+| Twice per week  | 9:00 AM        | 2:00 AM                 | `0 2 * * 1,4`   |
 
 **Note**: GitHub Actions uses UTC time. Calculate your desired time in UTC.
 
@@ -142,14 +148,28 @@ If a workflow fails:
 To temporarily disable automatic posts without deleting the workflow:
 
 1. Go to **Actions** tab
-2. Click on **Daily LinkedIn Post** workflow
+2. Click on **LinkedIn Post (Every 2 Days)** workflow
 3. Click the **...** menu → **Disable workflow**
 
 You can re-enable it later from the same menu.
 
-### Run Multiple Times Per Day
+### Change Posting Frequency
 
-To post multiple times daily, add more cron schedules:
+**Post daily instead of every 2 days:**
+
+```yaml
+schedule:
+  - cron: "0 2 * * *" # Daily at 9:00 AM Bangkok
+```
+
+**Post weekly (every Monday):**
+
+```yaml
+schedule:
+  - cron: "0 2 * * 1" # Every Monday at 9:00 AM Bangkok
+```
+
+**Post multiple times (e.g., twice daily):**
 
 ```yaml
 schedule:

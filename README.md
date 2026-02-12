@@ -8,7 +8,7 @@ A modern Express API server built with **Bun runtime**, featuring Gemini AI inte
 - 🎯 **Express.js** - Robust web framework
 - 🤖 **Gemini AI Integration** - AI-powered content generation
 - 📱 **LinkedIn Integration** - Automated posting to LinkedIn
-- 🤖 **GitHub Actions Automation** - Daily scheduled posts at 9 AM
+- 🤖 **GitHub Actions Automation** - Scheduled posts every 2 days at 9 AM
 - 🔗 **Linked API Architecture** - Forward generated content to other endpoints
 - 🛡️ **Security** - Helmet for security headers, CORS enabled
 - 📝 **TypeScript** - Full TypeScript support
@@ -91,9 +91,9 @@ bun run daily-post
 
 The server will start on `http://localhost:3000`
 
-## 🤖 Automated Daily Posting
+## 🤖 Automated Posting
 
-This application includes a GitHub Actions workflow that automatically generates and posts content to LinkedIn every day at 9:00 AM (Bangkok time).
+This application includes a GitHub Actions workflow that automatically generates and posts content to LinkedIn every 2 days at 9:00 AM (Bangkok time).
 
 ### Setup Automation
 
