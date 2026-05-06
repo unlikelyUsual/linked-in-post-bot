@@ -24,14 +24,10 @@ export class LinkedInService {
     this.personUrn = process.env.LINKEDIN_PERSON_URN || "";
 
     if (!this.accessToken) {
-      console.warn(
-        "LINKEDIN_ACCESS_TOKEN is not set in environment variables",
-      );
+      console.warn("LINKEDIN_ACCESS_TOKEN is not set in environment variables");
     }
     if (!this.personUrn) {
-      console.warn(
-        "LINKEDIN_PERSON_URN is not set in environment variables",
-      );
+      console.warn("LINKEDIN_PERSON_URN is not set in environment variables");
     }
   }
 
