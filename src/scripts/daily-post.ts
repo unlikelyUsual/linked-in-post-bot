@@ -13,8 +13,8 @@ dotenv.config();
  */
 async function runDailyPost() {
   try {
-    console.log("🚀 Starting daily LinkedIn post generation...");
-    console.log(`⏰ Current time: ${new Date().toISOString()}`);
+    console.log("Starting daily LinkedIn post generation...");
+    console.log(`Current time: ${new Date().toISOString()}`);
 
     // Initialize services
     const geminiService = new GeminiService();
@@ -33,22 +33,22 @@ async function runDailyPost() {
 
     // Generate prompt
     const prompt = generatePrompt();
-    console.log("🎯 Generated prompt:", prompt);
+    console.log("Generated prompt:", prompt);
 
     // Generate content using Gemini
-    console.log("✨ Generating content with Gemini...");
+    console.log("Generating content with Gemini...");
     const content = await geminiService.generateContent(prompt);
-    console.log("📝 Generated content:", content);
-    console.log(`📊 Content length: ${content.length} characters`);
+    console.log("Generated content:", content);
+    console.log(`Content length: ${content.length} characters`);
 
     // Post to LinkedIn
-    console.log("📤 Posting to LinkedIn...");
+    console.log("Posting to LinkedIn...");
     const linkedInResponse = await linkedInService.sharePost(content);
 
-    console.log("✅ Post successfully published to LinkedIn!");
-    console.log(`🆔 Post ID: ${linkedInResponse.id}`);
-    console.log(`📊 Post state: ${linkedInResponse.lifecycleState}`);
-    console.log(`⏰ Completed at: ${new Date().toISOString()}`);
+    console.log("Post successfully published to LinkedIn!");
+    console.log(`Post ID: ${linkedInResponse.id}`);
+    console.log(`Post state: ${linkedInResponse.lifecycleState}`);
+    console.log(`Completed at: ${new Date().toISOString()}`);
 
     // Output summary for GitHub Actions
     console.log("\n=== Summary ===");
@@ -59,7 +59,7 @@ async function runDailyPost() {
 
     process.exit(0);
   } catch (error: any) {
-    console.error("❌ Error in daily post generation:", error);
+    console.error("Error in daily post generation:", error);
     console.error("Error details:", error.message);
 
     // Output error summary for GitHub Actions

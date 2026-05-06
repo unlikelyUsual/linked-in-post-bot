@@ -21,12 +21,12 @@ router.post("/new-post", async (req: Request, res: Response) => {
     // Generate prompt - use custom topic if provided, otherwise random
     const prompt = topic ? generateCustomPrompt(topic) : generatePrompt();
 
-    console.log("🎯 Generated prompt:", prompt);
+    console.log("Generated prompt:", prompt);
 
     // Generate content using Gemini
     const content = await geminiService.generateContent(prompt, maxTokens);
 
-    console.log("✨ Generated content:", content);
+    console.log("Generated content:", content);
 
     // Check if this is a dry run (generate only, don't post)
     if (dryRun) {

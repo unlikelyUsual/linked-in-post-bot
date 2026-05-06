@@ -25,12 +25,12 @@ export class LinkedInService {
 
     if (!this.accessToken) {
       console.warn(
-        "⚠️  LINKEDIN_ACCESS_TOKEN is not set in environment variables",
+        "LINKEDIN_ACCESS_TOKEN is not set in environment variables",
       );
     }
     if (!this.personUrn) {
       console.warn(
-        "⚠️  LINKEDIN_PERSON_URN is not set in environment variables",
+        "LINKEDIN_PERSON_URN is not set in environment variables",
       );
     }
   }
@@ -84,11 +84,11 @@ export class LinkedInService {
       }
 
       const result = (await response.json()) as LinkedInPostResponse;
-      console.log("✅ Successfully posted to LinkedIn:", result.id);
+      console.log("Successfully posted to LinkedIn:", result.id);
 
       return result;
     } catch (error: any) {
-      console.error("❌ Error posting to LinkedIn:", error.message);
+      console.error("Error posting to LinkedIn:", error.message);
       throw error;
     }
   }
