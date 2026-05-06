@@ -111,16 +111,22 @@ export class LinkedInService {
     }
 
     try {
-      const response = await fetch(`${this.apiBaseUrl}/userinfo`, {
+      const response = await fetch(`${this.apiBaseUrl}/me`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${this.accessToken}`,
           "Content-Type": "application/json",
+          "X-Restli-Protocol-Version": "2.0.0",
         },
       });
 
       if (!response.ok) {
-        throw new Error(`LinkedIn API error: ${response.status}`);
+        const errorData = (await response
+          .json()
+          .catch(() => ({}))) as LinkedInErrorResponse;
+        throw new Error(
+          `LinkedIn API error: ${response.status} - ${errorData.message || response.statusText}`,
+        );
       }
 
       return await response.json();

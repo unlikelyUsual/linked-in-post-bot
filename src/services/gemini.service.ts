@@ -13,7 +13,7 @@ export class GeminiService {
 
     this.genAI = new GoogleGenerativeAI(apiKey);
     this.model = this.genAI.getGenerativeModel({
-      model: "gemini-flash-latest",
+      model: "text-bison-001",
     });
   }
 

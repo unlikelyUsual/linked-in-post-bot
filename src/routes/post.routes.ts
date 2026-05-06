@@ -82,7 +82,7 @@ router.post("/new-post", async (req: Request, res: Response) => {
  * GET /api/post/preview
  * Preview what kind of content will be generated (without posting)
  */
-router.get("/preview-profile", async (req: Request, res: Response) => {
+router.get("/preview-post", async (req: Request, res: Response) => {
   try {
     res.json({
       success: true,
