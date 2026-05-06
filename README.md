@@ -404,4 +404,11 @@ ISC
 
 ---
 
+## Create New Token from the Linked Dev portal
+
+- Select App
+- Docs and tools from the nav bar
+- Oauth token tools
+- Create fresh token
+
 **Happy Coding! 🚀**
