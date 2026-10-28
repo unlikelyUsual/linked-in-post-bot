@@ -25,11 +25,27 @@ jobs:
         run: bun install
 
       - name: Run daily post script
+        id: post
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
+          LINKEDIN_REFRESH_TOKEN: ${{ secrets.LINKEDIN_REFRESH_TOKEN }}
+          LINKEDIN_CLIENT_ID: ${{ secrets.LINKEDIN_CLIENT_ID }}
+          LINKEDIN_CLIENT_SECRET: ${{ secrets.LINKEDIN_CLIENT_SECRET }}
           LINKEDIN_PERSON_URN: ${{ secrets.LINKEDIN_PERSON_URN }}
         run: bun run daily-post
+
+      - name: Save rotated LinkedIn refresh token
+        if: always() && steps.post.outputs.linkedin_refresh_token != ''
+        env:
+          GH_TOKEN: ${{ secrets.GH_SECRETS_UPDATE_TOKEN }}
+          LINKEDIN_REFRESH_TOKEN: ${{ steps.post.outputs.linkedin_refresh_token }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::error::Set GH_SECRETS_UPDATE_TOKEN with permission to update repository Actions secrets."
+            exit 1
+          fi
+          gh secret set LINKEDIN_REFRESH_TOKEN --body "$LINKEDIN_REFRESH_TOKEN" --repo "$GITHUB_REPOSITORY"
 
       - name: Notify on failure
         if: failure()

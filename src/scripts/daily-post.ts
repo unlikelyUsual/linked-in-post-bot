@@ -27,7 +27,7 @@ async function runDailyPost() {
 
     if (!linkedInService.isConfigured()) {
       throw new Error(
-        "LinkedIn credentials not configured. Set LINKEDIN_ACCESS_TOKEN and LINKEDIN_PERSON_URN in environment variables.",
+        "LinkedIn credentials not configured. Set LINKEDIN_PERSON_URN and either LINKEDIN_ACCESS_TOKEN or LINKEDIN_REFRESH_TOKEN with LINKEDIN_CLIENT_ID and LINKEDIN_CLIENT_SECRET.",
       );
     }
 

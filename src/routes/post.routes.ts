@@ -46,7 +46,7 @@ router.post("/new-post", async (req: Request, res: Response) => {
       return res.status(400).json({
         success: false,
         message:
-          "LinkedIn credentials not configured. Set LINKEDIN_ACCESS_TOKEN and LINKEDIN_PERSON_URN in environment variables, or use dryRun: true to test without posting.",
+          "LinkedIn credentials not configured. Set LINKEDIN_PERSON_URN and either LINKEDIN_ACCESS_TOKEN or LINKEDIN_REFRESH_TOKEN with LINKEDIN_CLIENT_ID and LINKEDIN_CLIENT_SECRET, or use dryRun: true to test without posting.",
         data: {
           content,
           prompt,
@@ -115,7 +115,7 @@ router.get("/status", (_req: Request, res: Response) => {
       geminiConfigured: !!process.env.GEMINI_API_KEY,
       message: isConfigured
         ? "All services are configured and ready"
-        : "LinkedIn credentials missing. Set LINKEDIN_ACCESS_TOKEN and LINKEDIN_PERSON_URN in environment variables.",
+        : "LinkedIn credentials missing. Set LINKEDIN_PERSON_URN and either LINKEDIN_ACCESS_TOKEN or LINKEDIN_REFRESH_TOKEN with LINKEDIN_CLIENT_ID and LINKEDIN_CLIENT_SECRET.",
       timestamp: new Date().toISOString(),
     },
   });

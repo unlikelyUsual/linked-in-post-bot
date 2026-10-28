@@ -22,7 +22,7 @@ const POST_STYLES = [
   "Share a recent learning experience with",
   "Compare different approaches to",
   "Discuss the future of",
-  "Get latest blog about it and share about it",
+  "Explain a useful idea or development in",
   "Share an interesting use case for",
 ];
 
@@ -35,6 +35,27 @@ const POST_TONES = [
   "Keep it concise and to the point",
 ];
 
+const createPostPrompt = (
+  topic: string,
+  style: string,
+  tone: string,
+  includeCodeExample: boolean,
+): string => `Create a professional LinkedIn post about ${topic}.
+
+Angle: ${style} ${topic}.
+Tone: ${tone}.
+Requirements:
+- Open with a specific, engaging hook and focus on one useful idea.
+- Use short paragraphs and line breaks so the post is easy to scan.
+- Include practical, accurate takeaways; avoid generic claims and unsupported statistics.
+- Do not invent personal experiences. Use a hypothetical or general example unless a real experience was provided.
+- Add a relevant question or call-to-action that invites meaningful discussion.
+- Add 3-5 relevant hashtags at the end.
+- Include up to 2 directly relevant references at the bottom. Prefer primary documentation or reputable sources, give each a descriptive title and its full URL, and never invent a source or URL. Omit references if you cannot confidently provide accurate URLs. Use plain URLs, not Markdown links.
+- ${includeCodeExample ? "When a short code example genuinely clarifies the topic, include a concise, valid snippet in a fenced code block with a language label, then briefly explain it. Skip the snippet if code would feel forced." : "Do not include a code snippet in this post; focus on the explanation and actionable takeaways."}
+- Keep the post ready to publish as plain text. LinkedIn may display code fences literally, so do not rely on Markdown rendering.
+- Return only the post content, with no emojis, and keep it under 400 words.`;
+
 /**
  * Generates a randomized prompt for creating LinkedIn posts
  * @returns A detailed prompt string for the AI to generate content
@@ -44,21 +65,9 @@ export const generatePrompt = (): string => {
   const topic = TOPICS[Math.floor(Math.random() * TOPICS.length)];
   const style = POST_STYLES[Math.floor(Math.random() * POST_STYLES.length)];
   const tone = POST_TONES[Math.floor(Math.random() * POST_TONES.length)];
+  const includeCodeExample = Math.random() < 0.35;
 
-  // Generate comprehensive prompt
-  const prompt = `Create a professional LinkedIn post about ${topic}.
-
-Style: ${style} ${topic}.
-Tone: ${tone}.
-Requirements:
-- Include relevant hashtags at the end
-- Add a call-to-action or question to engage readers
-- Make it valuable and actionable for the target audience
-- The post should be ready to publish as-is, with proper formatting for LinkedIn.
-- Return only the content. That's all. Don't add emojis. Max words 400. 
-- Add reference at the bottom, Keep reference at max 2 (ex : blog heading - link) not in md format`;
-
-  return prompt;
+  return createPostPrompt(topic, style, tone, includeCodeExample);
 };
 
 /**
@@ -69,17 +78,7 @@ Requirements:
 export const generateCustomPrompt = (topic: string): string => {
   const style = POST_STYLES[Math.floor(Math.random() * POST_STYLES.length)];
   const tone = POST_TONES[Math.floor(Math.random() * POST_TONES.length)];
+  const includeCodeExample = Math.random() < 0.35;
 
-  return `Create a professional LinkedIn post about ${topic}.
-
-Style: ${style} ${topic}.
-
-Tone: ${tone}.
-Requirements:
-- Include relevant hashtags at the end
-- Add a call-to-action or question to engage readers
-- Make it valuable and actionable for the target audience
-- The post should be ready to publish as-is, with proper formatting for LinkedIn.
-- Return only the content. That's all. Don't add emojis. Max words 400. 
-- Add reference at the bottom, Keep reference at max 2`;
+  return createPostPrompt(topic, style, tone, includeCodeExample);
 };

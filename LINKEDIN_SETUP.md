@@ -86,9 +86,15 @@ Update your `.env` file with the credentials:
 
 ```bash
 # LinkedIn API Configuration
-LINKEDIN_ACCESS_TOKEN=your_actual_access_token_here
+LINKEDIN_REFRESH_TOKEN=your_refresh_token_here
+LINKEDIN_CLIENT_ID=your_linkedin_app_client_id
+LINKEDIN_CLIENT_SECRET=your_linkedin_app_client_secret
 LINKEDIN_PERSON_URN=urn:li:person:your_person_id_here
 ```
+
+The application exchanges the refresh token for an access token when it calls LinkedIn, so the access token does not need to be manually renewed. This requires a LinkedIn app eligible for refresh tokens. For scheduled GitHub Actions runs, add these values as repository secrets as described in [GITHUB_ACTIONS_SETUP.md](./GITHUB_ACTIONS_SETUP.md). If LinkedIn rotates the refresh token, the workflow updates the repository secret automatically; local runs will require you to update `LINKEDIN_REFRESH_TOKEN` yourself.
+
+For applications that do not have a refresh token, `LINKEDIN_ACCESS_TOKEN` remains supported.
 
 ## Step 8: Test the Integration
 

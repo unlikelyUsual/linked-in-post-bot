@@ -21,13 +21,22 @@ Before setting up the GitHub Actions workflow, ensure you have:
 Navigate to your GitHub repository and add the following secrets:
 
 1. Go to **Settings** → **Secrets and variables** → **Actions**
-2. Click **New repository secret** and add these three secrets:
+2. Click **New repository secret** and add the required secrets:
 
-| Secret Name             | Description                      | Example                   |
-| ----------------------- | -------------------------------- | ------------------------- |
-| `GEMINI_API_KEY`        | Your Google Gemini API key       | `AIzaSyC...`              |
-| `LINKEDIN_ACCESS_TOKEN` | Your LinkedIn OAuth access token | `AQVz1B...`               |
-| `LINKEDIN_PERSON_URN`   | Your LinkedIn Person URN         | `urn:li:person:ABC123xyz` |
+| Secret Name               | Description |
+| ------------------------- | ----------- |
+| `GEMINI_API_KEY`          | Your Google Gemini API key |
+| `LINKEDIN_REFRESH_TOKEN`  | LinkedIn OAuth refresh token |
+| `LINKEDIN_CLIENT_ID`      | LinkedIn app client ID |
+| `LINKEDIN_CLIENT_SECRET`  | LinkedIn app client secret |
+| `LINKEDIN_PERSON_URN`     | Your LinkedIn Person URN |
+| `GH_SECRETS_UPDATE_TOKEN` | Fine-grained GitHub token used only if LinkedIn rotates the refresh token |
+
+The workflow exchanges the refresh token for a fresh access token before each LinkedIn API request. It does not need a manually maintained `LINKEDIN_ACCESS_TOKEN` when refresh credentials are configured. If LinkedIn returns a replacement refresh token, the workflow saves it back to `LINKEDIN_REFRESH_TOKEN`.
+
+Create `GH_SECRETS_UPDATE_TOKEN` as a fine-grained personal access token scoped to this repository, with **Repository permissions → Actions: Read and write**. GitHub requires the Actions permission to update Actions secrets. The workflow uses this token only to update the refresh-token secret when LinkedIn rotates that token. Keep it private and rotate it according to your security practices.
+
+If you are not using refresh tokens, the existing `LINKEDIN_ACCESS_TOKEN` and `LINKEDIN_PERSON_URN` configuration continues to work.
 
 ### Step 2: Verify Workflow File
 

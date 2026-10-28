@@ -95,6 +95,8 @@ The server will start on `http://localhost:3000`
 
 This application includes a GitHub Actions workflow that automatically generates and posts content to LinkedIn every 2 days at 9:00 AM (Bangkok time).
 
+Generated posts are written with a concise, scannable structure, a discussion prompt, and relevant hashtags. They may include up to two trustworthy references as plain URLs; the generator is instructed to omit links it cannot confidently provide rather than make them up. Some technical posts include a short fenced code example when it adds practical value. LinkedIn posts are sent as plain text, so code fences may appear literally rather than being rendered as formatted code.
+
 ### Setup Automation
 
 1. Push your code to a GitHub repository
