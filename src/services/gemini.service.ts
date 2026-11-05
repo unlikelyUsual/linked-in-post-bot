@@ -1,8 +1,46 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import {
+  GoogleGenerativeAI,
+  type GenerativeModel,
+} from "@google/generative-ai";
+
+const MODELS = ["gemini-3.6-flash", "gemini-3.5-flash-lite"] as const;
+const MAX_ATTEMPTS_PER_MODEL = 3;
+const RETRY_DELAY_MS = 1_000;
+
+interface GeminiModel {
+  name: string;
+  model: GenerativeModel;
+}
+
+const getHttpStatus = (error: unknown): number | undefined => {
+  if (
+    error &&
+    typeof error === "object" &&
+    "status" in error &&
+    typeof error.status === "number"
+  ) {
+    return error.status;
+  }
+};
+
+const isRetryableError = (error: unknown): boolean => {
+  if (error instanceof TypeError) {
+    return true;
+  }
+
+  const status = getHttpStatus(error);
+  return (
+    status === 408 ||
+    status === 429 ||
+    (status !== undefined && status >= 500)
+  );
+};
+
+const getErrorMessage = (error: unknown): string =>
+  error instanceof Error ? error.message : String(error);
 
 export class GeminiService {
-  private genAI: GoogleGenerativeAI;
-  private model: any;
+  private readonly models: GeminiModel[];
 
   constructor() {
     const apiKey = process.env.GEMINI_API_KEY;
@@ -11,10 +49,11 @@ export class GeminiService {
       throw new Error("GEMINI_API_KEY is not set in environment variables");
     }
 
-    this.genAI = new GoogleGenerativeAI(apiKey);
-    this.model = this.genAI.getGenerativeModel({
-      model: "gemini-flash-latest",
-    });
+    const genAI = new GoogleGenerativeAI(apiKey);
+    this.models = MODELS.map((name) => ({
+      name,
+      model: genAI.getGenerativeModel({ model: name }),
+    }));
   }
 
   /**
@@ -27,23 +66,65 @@ export class GeminiService {
     try {
       const generationConfig = maxTokens ? { maxOutputTokens: maxTokens } : {};
 
-      const result = await this.model.generateContent({
-        contents: [{ role: "user", parts: [{ text: prompt }] }],
-        generationConfig,
-      });
-
-      const response = result.response;
-      const text = response.text();
-
-      if (!text) {
-        throw new Error("No content generated from Gemini API");
+      for (const [modelIndex, { name, model }] of this.models.entries()) {
+        try {
+          const text = await this.generateWithRetry(
+            model,
+            name,
+            prompt,
+            generationConfig,
+          );
+          if (!text) {
+            throw new Error("No content generated from Gemini API");
+          }
+          return text;
+        } catch (error) {
+          if (
+            !isRetryableError(error) ||
+            modelIndex === this.models.length - 1
+          ) {
+            throw error;
+          }
+          console.warn(
+            `${name} unavailable after retries; falling back to ${this.models[modelIndex + 1].name}.`,
+          );
+        }
       }
 
-      return text;
-    } catch (error: any) {
+      throw new Error("All Gemini models failed to generate content");
+    } catch (error) {
       console.error("Gemini API Error:", error);
-      throw new Error(`Failed to generate content: ${error.message}`);
+      throw new Error(`Failed to generate content: ${getErrorMessage(error)}`);
     }
+  }
+
+  private async generateWithRetry(
+    model: GenerativeModel,
+    modelName: string,
+    prompt: string,
+    generationConfig: { maxOutputTokens?: number },
+  ): Promise<string> {
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS_PER_MODEL; attempt++) {
+      try {
+        const result = await model.generateContent({
+          contents: [{ role: "user", parts: [{ text: prompt }] }],
+          generationConfig,
+        });
+        return result.response.text();
+      } catch (error) {
+        if (!isRetryableError(error) || attempt === MAX_ATTEMPTS_PER_MODEL) {
+          throw error;
+        }
+
+        const delay = RETRY_DELAY_MS * attempt;
+        console.warn(
+          `${modelName} request failed temporarily; retrying in ${delay}ms (attempt ${attempt + 1}/${MAX_ATTEMPTS_PER_MODEL}).`,
+        );
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      }
+    }
+
+    throw new Error(`${modelName} failed after retries`);
   }
 
   /**
@@ -53,7 +134,7 @@ export class GeminiService {
    */
   async *generateContentStream(prompt: string): AsyncGenerator<string> {
     try {
-      const result = await this.model.generateContentStream({
+      const result = await this.models[0].model.generateContentStream({
         contents: [{ role: "user", parts: [{ text: prompt }] }],
       });
 
@@ -63,9 +144,9 @@ export class GeminiService {
           yield text;
         }
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Gemini Streaming Error:", error);
-      throw new Error(`Failed to stream content: ${error.message}`);
+      throw new Error(`Failed to stream content: ${getErrorMessage(error)}`);
     }
   }
 }

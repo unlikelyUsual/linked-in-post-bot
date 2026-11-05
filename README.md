@@ -15,6 +15,8 @@ A modern Express API server built with **Bun runtime**, featuring Gemini AI inte
 - 🔄 **Hot Reload** - Auto-restart on file changes during development
 - 🎨 **Clean Architecture** - Well-organized code structure
 
+Gemini content generation uses `gemini-3.6-flash` with `gemini-3.5-flash-lite` as a fallback. Temporary errors (HTTP 408, 429, and 5xx) are retried up to three times per model before moving to the fallback.
+
 ## 📋 Prerequisites
 
 - [Bun](https://bun.sh/) v1.0.0 or higher
