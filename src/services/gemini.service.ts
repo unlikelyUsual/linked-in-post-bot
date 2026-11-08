@@ -1,11 +1,62 @@
 import {
   GoogleGenerativeAI,
+  SchemaType,
+  type GenerationConfig,
   type GenerativeModel,
+  type ResponseSchema,
 } from "@google/generative-ai";
+import type { SystemDesignPost } from "../types/systemDesign.ts";
 
 const MODELS = ["gemini-3.6-flash", "gemini-3.5-flash-lite"] as const;
 const MAX_ATTEMPTS_PER_MODEL = 3;
 const RETRY_DELAY_MS = 1_000;
+
+const systemDesignSchema: ResponseSchema = {
+  type: SchemaType.OBJECT,
+  properties: {
+    content: { type: SchemaType.STRING },
+    diagram: {
+      type: SchemaType.OBJECT,
+      properties: {
+        title: { type: SchemaType.STRING },
+        components: {
+          type: SchemaType.ARRAY,
+          minItems: 4,
+          maxItems: 9,
+          items: {
+            type: SchemaType.OBJECT,
+            properties: {
+              id: { type: SchemaType.STRING },
+              name: { type: SchemaType.STRING },
+              type: {
+                type: SchemaType.STRING,
+                format: "enum",
+                enum: ["client", "service", "data", "queue", "external"],
+              },
+            },
+            required: ["id", "name", "type"],
+          },
+        },
+        connections: {
+          type: SchemaType.ARRAY,
+          minItems: 3,
+          maxItems: 16,
+          items: {
+            type: SchemaType.OBJECT,
+            properties: {
+              from: { type: SchemaType.STRING },
+              to: { type: SchemaType.STRING },
+              label: { type: SchemaType.STRING },
+            },
+            required: ["from", "to", "label"],
+          },
+        },
+      },
+      required: ["title", "components", "connections"],
+    },
+  },
+  required: ["content", "diagram"],
+};
 
 interface GeminiModel {
   name: string;
@@ -39,6 +90,76 @@ const isRetryableError = (error: unknown): boolean => {
 const getErrorMessage = (error: unknown): string =>
   error instanceof Error ? error.message : String(error);
 
+const validateSystemDesign = (value: unknown): SystemDesignPost => {
+  if (!value || typeof value !== "object") {
+    throw new Error("Response must be an object");
+  }
+
+  const post = value as Partial<SystemDesignPost>;
+  const { content, diagram } = post;
+  if (
+    typeof content !== "string" ||
+    !content.trim() ||
+    !diagram ||
+    typeof diagram.title !== "string" ||
+    !diagram.title.trim() ||
+    !Array.isArray(diagram.components) ||
+    !Array.isArray(diagram.connections)
+  ) {
+    throw new Error("Response is missing post or diagram fields");
+  }
+
+  if (
+    diagram.components.length < 4 ||
+    diagram.components.length > 9 ||
+    diagram.connections.length < 3 ||
+    diagram.connections.length > 16
+  ) {
+    throw new Error("Diagram must have 4-9 components and 3-16 connections");
+  }
+
+  const componentIds = new Set<string>();
+  for (const component of diagram.components) {
+    if (
+      !component ||
+      typeof component.id !== "string" ||
+      !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(component.id) ||
+      typeof component.name !== "string" ||
+      !component.name.trim() ||
+      component.name.length > 36 ||
+      !["client", "service", "data", "queue", "external"].includes(
+        component.type,
+      ) ||
+      componentIds.has(component.id)
+    ) {
+      throw new Error("Diagram contains an invalid or duplicate component");
+    }
+    componentIds.add(component.id);
+  }
+
+  for (const connection of diagram.connections) {
+    if (
+      !connection ||
+      !componentIds.has(connection.from) ||
+      !componentIds.has(connection.to) ||
+      connection.from === connection.to ||
+      typeof connection.label !== "string" ||
+      connection.label.length > 32
+    ) {
+      throw new Error("Diagram contains an invalid connection");
+    }
+  }
+
+  return {
+    content: content.trim(),
+    diagram: {
+      title: diagram.title.trim().slice(0, 72),
+      components: diagram.components,
+      connections: diagram.connections,
+    },
+  };
+};
+
 export class GeminiService {
   private readonly models: GeminiModel[];
 
@@ -63,9 +184,41 @@ export class GeminiService {
    * @returns Generated content as string
    */
   async generateContent(prompt: string, maxTokens?: number): Promise<string> {
-    try {
-      const generationConfig = maxTokens ? { maxOutputTokens: maxTokens } : {};
+    const text = await this.generateWithFallback(prompt, {
+      ...(maxTokens ? { maxOutputTokens: maxTokens } : {}),
+    });
 
+    if (!text) {
+      throw new Error("No content generated from Gemini API");
+    }
+
+    return text;
+  }
+
+  async generateSystemDesign(
+    prompt: string,
+    maxTokens?: number,
+  ): Promise<SystemDesignPost> {
+    const text = await this.generateWithFallback(prompt, {
+      ...(maxTokens ? { maxOutputTokens: maxTokens } : {}),
+      responseMimeType: "application/json",
+      responseSchema: systemDesignSchema,
+    });
+
+    try {
+      return validateSystemDesign(JSON.parse(text));
+    } catch (error) {
+      throw new Error(
+        `Gemini returned an invalid system design response: ${getErrorMessage(error)}`,
+      );
+    }
+  }
+
+  private async generateWithFallback(
+    prompt: string,
+    generationConfig: GenerationConfig,
+  ): Promise<string> {
+    try {
       for (const [modelIndex, { name, model }] of this.models.entries()) {
         try {
           const text = await this.generateWithRetry(
@@ -74,9 +227,6 @@ export class GeminiService {
             prompt,
             generationConfig,
           );
-          if (!text) {
-            throw new Error("No content generated from Gemini API");
-          }
           return text;
         } catch (error) {
           if (
@@ -102,7 +252,7 @@ export class GeminiService {
     model: GenerativeModel,
     modelName: string,
     prompt: string,
-    generationConfig: { maxOutputTokens?: number },
+    generationConfig: GenerationConfig,
   ): Promise<string> {
     for (let attempt = 1; attempt <= MAX_ATTEMPTS_PER_MODEL; attempt++) {
       try {
@@ -144,6 +294,7 @@ export class GeminiService {
           yield text;
         }
       }
+
     } catch (error) {
       console.error("Gemini Streaming Error:", error);
       throw new Error(`Failed to stream content: ${getErrorMessage(error)}`);

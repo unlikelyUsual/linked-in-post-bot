@@ -1,6 +1,7 @@
 import { Router, type Request, type Response } from "express";
 import { GeminiService } from "../services/gemini.service.ts";
 import { LinkedInService } from "../services/linkedin.service.ts";
+import { renderSystemDesignImage } from "../services/system-design-image.service.ts";
 import {
   generateCustomPrompt,
   generatePrompt,
@@ -24,7 +25,12 @@ router.post("/new-post", async (req: Request, res: Response) => {
     console.log("Generated prompt:", prompt);
 
     // Generate content using Gemini
-    const content = await geminiService.generateContent(prompt, maxTokens);
+    const systemDesign = await geminiService.generateSystemDesign(
+      prompt,
+      maxTokens,
+    );
+    const image = await renderSystemDesignImage(systemDesign.diagram);
+    const content = systemDesign.content;
 
     console.log("Generated content:", content);
 
@@ -35,6 +41,9 @@ router.post("/new-post", async (req: Request, res: Response) => {
         message: "Content generated successfully (dry run - not posted)",
         data: {
           content,
+          diagramTitle: systemDesign.diagram.title,
+          diagram: systemDesign.diagram,
+          imagePreview: `data:image/png;base64,${image.toString("base64")}`,
           prompt,
           timestamp: new Date().toISOString(),
         },
@@ -49,19 +58,27 @@ router.post("/new-post", async (req: Request, res: Response) => {
           "LinkedIn credentials not configured. Set LINKEDIN_PERSON_URN and either LINKEDIN_ACCESS_TOKEN or LINKEDIN_REFRESH_TOKEN with LINKEDIN_CLIENT_ID and LINKEDIN_CLIENT_SECRET, or use dryRun: true to test without posting.",
         data: {
           content,
+          diagramTitle: systemDesign.diagram.title,
+          diagram: systemDesign.diagram,
+          imagePreview: `data:image/png;base64,${image.toString("base64")}`,
           prompt,
           timestamp: new Date().toISOString(),
         },
       });
     }
 
-    const linkedInResponse = await linkedInService.sharePost(content);
+    const linkedInResponse = await linkedInService.sharePost(content, {
+      data: image,
+      title: systemDesign.diagram.title,
+      description: `High-level system architecture: ${systemDesign.diagram.title}`,
+    });
 
     res.json({
       success: true,
       message: "Content generated and posted to LinkedIn successfully",
       data: {
         content,
+        diagramTitle: systemDesign.diagram.title,
         prompt,
         linkedInPostId: linkedInResponse.id,
         linkedInPostState: linkedInResponse.lifecycleState,

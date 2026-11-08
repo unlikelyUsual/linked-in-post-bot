@@ -30,6 +30,8 @@ router.get("/", (_req, res) => {
           maxTokens: "(optional) Max tokens for content generation",
           dryRun: "(optional) Set to true to generate without posting",
         },
+        output:
+          "System-design posts include a generated architecture diagram image; dry runs return it as a base64 PNG data URL.",
       },
     },
   });

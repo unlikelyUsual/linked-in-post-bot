@@ -2,6 +2,7 @@
 import dotenv from "dotenv";
 import { GeminiService } from "../services/gemini.service.ts";
 import { LinkedInService } from "../services/linkedin.service.ts";
+import { renderSystemDesignImage } from "../services/system-design-image.service.ts";
 import { generatePrompt } from "../util/generatePrompt.ts";
 
 // Load environment variables
@@ -37,13 +38,20 @@ async function runDailyPost() {
 
     // Generate content using Gemini
     console.log("Generating content with Gemini...");
-    const content = await geminiService.generateContent(prompt);
+    const systemDesign = await geminiService.generateSystemDesign(prompt);
+    const image = await renderSystemDesignImage(systemDesign.diagram);
+    const content = systemDesign.content;
     console.log("Generated content:", content);
+    console.log(`Generated architecture image: ${systemDesign.diagram.title}`);
     console.log(`Content length: ${content.length} characters`);
 
     // Post to LinkedIn
     console.log("Posting to LinkedIn...");
-    const linkedInResponse = await linkedInService.sharePost(content);
+    const linkedInResponse = await linkedInService.sharePost(content, {
+      data: image,
+      title: systemDesign.diagram.title,
+      description: `High-level system architecture: ${systemDesign.diagram.title}`,
+    });
 
     console.log("Post successfully published to LinkedIn!");
     console.log(`Post ID: ${linkedInResponse.id}`);

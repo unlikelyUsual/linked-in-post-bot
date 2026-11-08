@@ -32,7 +32,7 @@ Navigate to your GitHub repository and add the following secrets:
 | `LINKEDIN_PERSON_URN`     | Your LinkedIn Person URN |
 | `GH_SECRETS_UPDATE_TOKEN` | Fine-grained GitHub token used only if LinkedIn rotates the refresh token |
 
-The workflow exchanges the refresh token for a fresh access token before each LinkedIn API request. It does not need a manually maintained `LINKEDIN_ACCESS_TOKEN` when refresh credentials are configured. If LinkedIn returns a replacement refresh token, the workflow saves it back to `LINKEDIN_REFRESH_TOKEN`.
+The workflow exchanges the refresh token for a fresh access token before each LinkedIn API request. It does not need a manually maintained `LINKEDIN_ACCESS_TOKEN` when refresh credentials are configured. System-design posts also render a PNG architecture diagram and upload it with the post. If LinkedIn returns a replacement refresh token, the workflow saves it back to `LINKEDIN_REFRESH_TOKEN`.
 
 Create `GH_SECRETS_UPDATE_TOKEN` as a fine-grained personal access token scoped to this repository, with **Repository permissions → Actions: Read and write**. GitHub requires the Actions permission to update Actions secrets. The workflow uses this token only to update the refresh-token secret when LinkedIn rotates that token. Keep it private and rotate it according to your security practices.
 

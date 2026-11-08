@@ -7,7 +7,7 @@ A modern Express API server built with **Bun runtime**, featuring Gemini AI inte
 - ⚡️ **Bun Runtime** - Lightning-fast JavaScript runtime
 - 🎯 **Express.js** - Robust web framework
 - 🤖 **Gemini AI Integration** - AI-powered content generation
-- 📱 **LinkedIn Integration** - Automated posting to LinkedIn
+- 📱 **LinkedIn Integration** - Automated text and architecture-image posting
 - 🤖 **GitHub Actions Automation** - Scheduled posts every 2 days at 9 AM
 - 🔗 **Linked API Architecture** - Forward generated content to other endpoints
 - 🛡️ **Security** - Helmet for security headers, CORS enabled
@@ -15,7 +15,7 @@ A modern Express API server built with **Bun runtime**, featuring Gemini AI inte
 - 🔄 **Hot Reload** - Auto-restart on file changes during development
 - 🎨 **Clean Architecture** - Well-organized code structure
 
-Gemini content generation uses `gemini-3.6-flash` with `gemini-3.5-flash-lite` as a fallback. Temporary errors (HTTP 408, 429, and 5xx) are retried up to three times per model before moving to the fallback.
+Gemini content generation creates interview-style high-level designs for common system-design questions. Each post includes a locally rendered PNG architecture diagram that is uploaded with the post. Generation uses `gemini-3.6-flash` with `gemini-3.5-flash-lite` as a fallback. Temporary errors (HTTP 408, 429, and 5xx) are retried up to three times per model before moving to the fallback.
 
 ## 📋 Prerequisites
 
@@ -137,16 +137,18 @@ For complete setup instructions, see [GITHUB_ACTIONS_SETUP.md](./GITHUB_ACTIONS_
 
   ```json
   {
-    "topic": "AI and Machine Learning",
+    "topic": "Design a distributed rate limiter",
     "maxTokens": 500,
     "dryRun": false
   }
   ```
 
   All fields are optional:
-  - `topic`: Custom topic (if not provided, uses random topic)
+  - `topic`: Custom system-design interview question (if not provided, uses a random question)
   - `maxTokens`: Maximum tokens to generate
   - `dryRun`: If true, generates content without posting
+
+System-design posts include a rendered architecture diagram. A dry run returns the diagram data and an `imagePreview` data URL containing the PNG.
 
   **Response:**
 

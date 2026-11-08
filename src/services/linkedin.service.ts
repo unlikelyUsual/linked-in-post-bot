@@ -24,6 +24,18 @@ interface LinkedInTokenResponse {
   error_description?: string;
 }
 
+interface LinkedInImageUploadResponse {
+  value?: {
+    asset?: string;
+    uploadMechanism?: {
+      "com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest"?: {
+        headers?: Record<string, string>;
+        uploadUrl?: string;
+      };
+    };
+  };
+}
+
 export class LinkedInService {
   private readonly apiBaseUrl = "https://api.linkedin.com/v2";
   private readonly oauthUrl = "https://www.linkedin.com/oauth/v2/accessToken";
@@ -50,31 +62,48 @@ export class LinkedInService {
    * @param text The text content to post
    * @returns The LinkedIn post response
    */
-  async sharePost(text: string): Promise<LinkedInPostResponse> {
+  async sharePost(
+    text: string,
+    image?: { data: Buffer; title: string; description: string },
+  ): Promise<LinkedInPostResponse> {
     if (!this.isConfigured()) {
       throw new Error(
         "LinkedIn credentials not configured. Set LINKEDIN_PERSON_URN and either LINKEDIN_ACCESS_TOKEN or LINKEDIN_REFRESH_TOKEN with LINKEDIN_CLIENT_ID and LINKEDIN_CLIENT_SECRET.",
       );
     }
 
-    const postData = {
-      author: this.personUrn,
-      lifecycleState: "PUBLISHED",
-      specificContent: {
-        "com.linkedin.ugc.ShareContent": {
-          shareCommentary: {
-            text: text,
-          },
-          shareMediaCategory: "NONE",
-        },
-      },
-      visibility: {
-        "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC",
-      },
-    };
-
     try {
       const accessToken = await this.getAccessToken();
+      const asset = image
+        ? await this.uploadImage(accessToken, image.data)
+        : undefined;
+      const shareContent = {
+        shareCommentary: { text },
+        shareMediaCategory: image ? "IMAGE" : "NONE",
+        ...(image && asset
+          ? {
+              media: [
+                {
+                  status: "READY",
+                  description: { text: image.description },
+                  media: asset,
+                  title: { text: image.title },
+                },
+              ],
+            }
+          : {}),
+      };
+      const postData = {
+        author: this.personUrn,
+        lifecycleState: "PUBLISHED",
+        specificContent: {
+          "com.linkedin.ugc.ShareContent": shareContent,
+        },
+        visibility: {
+          "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC",
+        },
+      };
+
       const response = await fetch(`${this.apiBaseUrl}/ugcPosts`, {
         method: "POST",
         headers: {
@@ -150,6 +179,68 @@ export class LinkedInService {
       console.error("Error fetching LinkedIn profile:", error.message);
       throw error;
     }
+  }
+
+  private async uploadImage(
+    accessToken: string,
+    image: Buffer,
+  ): Promise<string> {
+    const registrationResponse = await fetch(
+      `${this.apiBaseUrl}/assets?action=registerUpload`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+          "X-Restli-Protocol-Version": "2.0.0",
+        },
+        body: JSON.stringify({
+          registerUploadRequest: {
+            recipes: ["urn:li:digitalmediaRecipe:feedshare-image"],
+            owner: this.personUrn,
+            serviceRelationships: [
+              {
+                relationshipType: "OWNER",
+                identifier: "urn:li:userGeneratedContent",
+              },
+            ],
+          },
+        }),
+      },
+    );
+    const registration = (await registrationResponse
+      .json()
+      .catch(() => ({}))) as LinkedInImageUploadResponse;
+    const uploadRequest =
+      registration.value?.uploadMechanism?.[
+        "com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest"
+      ];
+    const uploadUrl = uploadRequest?.uploadUrl;
+    const asset = registration.value?.asset;
+
+    if (!registrationResponse.ok || !uploadUrl || !asset) {
+      throw new Error(
+        `LinkedIn image registration failed: ${registrationResponse.status} - ${registrationResponse.statusText}`,
+      );
+    }
+
+    const uploadResponse = await fetch(uploadUrl, {
+      method: "PUT",
+      headers: {
+        ...uploadRequest.headers,
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "image/png",
+      },
+      body: new Uint8Array(image),
+    });
+
+    if (!uploadResponse.ok) {
+      throw new Error(
+        `LinkedIn image upload failed: ${uploadResponse.status} - ${uploadResponse.statusText}`,
+      );
+    }
+
+    return asset;
   }
 
   private async getAccessToken(): Promise<string> {

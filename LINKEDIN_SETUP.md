@@ -36,6 +36,8 @@ Ensure your app has the following permissions (scopes):
 
 - `w_member_social` - Required to post on behalf of the user
 
+The generated system-design posts upload their architecture diagram as an image using the same Share on LinkedIn permission.
+
 ## Step 5: Generate Access Token
 
 ### Option A: Using OAuth 2.0 Flow (Recommended for Production)
